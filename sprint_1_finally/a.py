@@ -10,7 +10,7 @@
 Дома в городе Тимофея нумеровались в том порядке, в котором строились, поэтому их номера на
 карте никак не упорядочены. Пустые участки обозначены нулями.
 
-52332298
+52343856
 """
 import sys
 
@@ -20,7 +20,8 @@ def get_min_distances_to_zero(numbers):
     result = []
 
     for idx, number in enumerate(numbers):
-        if not number == 0:
+        # obvious comparison with zeros is based in this algorithm, bool typecast could make it more entangled
+        if number == 0:
             if idx != 0:
                 if last_zero_idx is None:
                     to_recalculate_count = idx
