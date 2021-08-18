@@ -1,19 +1,18 @@
 """
-Run ID: 52356209
+Run ID: 52362847
 
 -- ПРИНЦИП РАБОТЫ --
-За основу структуры Дек взят кольцевой буфер. 
-У дека есть 2 указателя: `head` - указатель для записи в начало и `tail` - указатель для записи в конец.
-При вставке элемента происходит проверка текущего размера Дека, если вставка возможна, элемент 
-записывается на соответвующий индекс head/tail и просходит смещение указателя для записи следующего 
-элемента: для `head` -1, для `tail` +1.
-При извлечении элемента происходит указатель смещается для `head` +1, для `tail` -1, по полученному 
-индексу будет возвращён элемент, а его место освободится для записи.
+За основу структуры Дек взят кольцевой буфер.
+У дека есть 2 указателя: `head` - указатель первого элемента и `tail` - указатель последнего элемента.
+При вставке элемента происходит проверка текущего размера Дека, если вставка возможна, элемент
+записывается на соответвующий индекс (head - 1)/(tail + 1).
+При извлечении элемента, происходит получение элемента по индексу head/tail и последующее смещение
+указателя на (head + 1)/(tail - 1).
 
 -- ДОКАЗАТЕЛЬСТВО КОРРЕКТНОСТИ --
 Кольцевой буфер - это очередь ограниченного размера, таким образом Дек не выйдет за пределы максимального размера.
-Очереди сохраняют порядок элементов, поэтому извлекаться и добавляться элементы в Дек будут поледовательно, 
-друг за другом. Методы `_back`/`_front` инвертируют друг друга относительно стороны очереди, 
+Очереди сохраняют порядок элементов, поэтому извлекаться и добавляться элементы в Дек будут поледовательно,
+друг за другом. Методы `_back`/`_front` инвертируют друг друга относительно стороны очереди,
 поэтому Дек является двусторонней очередью.
 
 -- ВРЕМЕННАЯ СЛОЖНОСТЬ --
@@ -35,45 +34,70 @@ class StackOverflow(Exception):
 
 class Deque:
     def __init__(self, max_size):
-        self.max_size = max_size
         self.items = [None] * max_size
-        self.size = 0
-        self.head = max_size - 1
-        self.tail = 0
+        self.head = None
+        self.tail = None
 
-    def push_back(self, value):
-        if self.size == self.max_size:
-            raise StackOverflow('list overflow')
+    def get_size(self):
+        if self.head is None and self.tail is None:
+            return 0
+        elif self.head == self.tail:
+            return 1
+        elif self.tail < self.head:
+            return (self.tail + self.get_max_size() - 1 - self.head) + 2
+        else:
+            return abs((self.head - self.tail + 1) - 2)
 
-        self.items[self.tail] = value
-        self.tail = (self.tail + 1) % self.max_size
-        self.size += 1
+    def get_max_size(self):
+        return len(self.items)
 
     def push_front(self, value):
-        if self.size == self.max_size:
+        size = self.get_size()
+        if size == self.get_max_size():
+            raise StackOverflow('list overflow')
+        if size == 0:
+            self.tail = self.head = 0
+        else:
+            self.head = self._move_pointer(self.head, -1)
+        self.items[self.head] = value
+
+    def push_back(self, value):
+        size = self.get_size()
+        if size == self.get_max_size():
             raise StackOverflow('list overflow')
 
-        self.items[self.head] = value
-        self.head = (self.head - 1) % self.max_size
-        self.size += 1
+        if size == 0:
+            self.tail = self.head = 0
+        else:
+            self.tail = self._move_pointer(self.tail, 1)
+
+        self.items[self.tail] = value
 
     def pop_front(self):
-        if self.size == 0:
+        if self.get_size() == 0:
             raise IndexError('pop from empty list')
-        self.head = (self.head + 1) % self.max_size
         elem = self.items[self.head]
         self.items[self.head] = None
-        self.size -= 1
+
+        if self.head == self.tail:
+            self.tail = self.head = None
+        else:
+            self.head = self._move_pointer(self.head, 1)
         return elem
 
     def pop_back(self):
-        if self.size == 0:
+        if self.get_size() == 0:
             raise IndexError('pop from empty list')
-        self.tail = (self.tail - 1) % self.max_size
         elem = self.items[self.tail]
         self.items[self.tail] = None
-        self.size -= 1
+        if self.head == self.tail:
+            self.tail = self.head = None
+        else:
+            self.tail = self._move_pointer(self.tail, -1)
         return elem
+
+    def _move_pointer(self, pointer_value, value):
+        return (pointer_value + value) % self.get_max_size()
 
 
 def handle_command(deque, command):
